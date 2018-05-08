@@ -12,6 +12,9 @@ use app\models\Product;
  */
 class ProductSearch extends Product
 {
+
+    public $date_from;
+    public $date_to;
     /**
      * {@inheritdoc}
      */
@@ -20,6 +23,7 @@ class ProductSearch extends Product
         return [
             [['id', 'price', 'user_id'], 'integer'],
             [['title', 'created_at', 'updated_at'], 'safe'],
+            [['date_from', 'date_to'], 'date', 'format' => 'php:Y-m-d'],
         ];
     }
 
@@ -63,10 +67,12 @@ class ProductSearch extends Product
             'price' => $this->price,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'user_id' => $this->user_id,
+            'user_id' => Yii::$app->user->identity->id,
         ]);
 
-        $query->andFilterWhere(['like', 'title', $this->title]);
+        $query->andFilterWhere(['like', 'title', $this->title])
+            ->andFilterWhere(['>=',  'created_at', $this->date_from ? $this->date_from  : null])
+            ->andFilterWhere(['<=', 'created_at', $this->date_to ? $this->date_to : null]);;
 
         return $dataProvider;
     }

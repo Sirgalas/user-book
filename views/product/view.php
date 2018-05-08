@@ -33,7 +33,14 @@ $this->params['breadcrumbs'][] = $this->title;
             'price',
             'created_at',
             'updated_at',
-            'user_id',
+            [
+                'attribute'=> 'user_id',
+                'format'=>'raw',
+                'value'=>function()use($model){
+                    return $model->user->username;
+                }
+            ]
+
         ],
     ]) ?>
 

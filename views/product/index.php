@@ -2,6 +2,7 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
+use kartik\date\DatePicker;
 
 /* @var $this yii\web\View */
 /* @var $searchModel app\search\ProductSearch */
@@ -28,7 +29,18 @@ $this->params['breadcrumbs'][] = $this->title;
             'id',
             'title',
             'price',
-            'created_at',
+            [
+                'filter' =>  DatePicker::widget([
+                    'model' => $searchModel,
+                    'attribute' => 'date_from',
+                    'attribute2' => 'date_to',
+                    'type' => DatePicker::TYPE_RANGE,
+                    'separator' => '-',
+                    'pluginOptions' => ['format' => 'yyyy-mm-dd']
+                ]),
+                'attribute' => 'created_at',
+                'format' => 'datetime',
+            ],
             'updated_at',
             //'user_id',
 
