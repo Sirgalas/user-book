@@ -7,11 +7,22 @@ use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\Response;
 use yii\filters\VerbFilter;
-use app\models\LoginForm;
-use app\models\ContactForm;
+use app\forms\SignupForm;
+use app\forms\LoginForm;
+use app\services\SignupFormService;
+use app\services\LoginFormService;
 
 class SiteController extends Controller
 {
+
+    private $serviceLogin;
+    private $serviceSignup;
+    public function __construct($id, $module,SignupFormService $serviceSignup, LoginFormService $serviceLogin, $config = [])
+    {
+        parent::__construct($id, $module, $config);
+        $this->serviceLogin = $serviceLogin;
+        $this->serviceSignup=$serviceSignup;
+    }
     /**
      * {@inheritdoc}
      */
@@ -19,7 +30,7 @@ class SiteController extends Controller
     {
         return [
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'only' => ['logout'],
                 'rules' => [
                     [
@@ -30,7 +41,7 @@ class SiteController extends Controller
                 ],
             ],
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'logout' => ['post'],
                 ],
@@ -71,19 +82,25 @@ class SiteController extends Controller
      */
     public function actionLogin()
     {
-        if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
+        {
+            if (!Yii::$app->user->isGuest) {
+                return $this->goHome();
+            }
+            $form = new LoginForm();
+            if ($form->load(Yii::$app->request->post()) && $form->validate()) {
+                try {
+                    $user = $this->service->auth($form);
+                    Yii::$app->user->login($user);
+                    return $this->goBack();
+                } catch (\DomainException $e) {
+                    Yii::$app->errorHandler->logException($e);
+                    Yii::$app->session->setFlash('error', $e->getMessage());
+                }
+            }
+            return $this->render('login', [
+                'model' => $form,
+            ]);
         }
-
-        $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
-        }
-
-        $model->password = '';
-        return $this->render('login', [
-            'model' => $model,
-        ]);
     }
 
     /**
@@ -98,31 +115,23 @@ class SiteController extends Controller
         return $this->goHome();
     }
 
-    /**
-     * Displays contact page.
-     *
-     * @return Response|string
-     */
-    public function actionContact()
+    public function actionSignup()
     {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
-
-            return $this->refresh();
+        $form = new SignupForm();
+        if ($form->load(Yii::$app->request->post())&&$form->validate()) {
+            try{
+                $user= $this->serviceSignup->signup($form);
+                if (Yii::$app->getUser()->login($user)) {
+                    return $this->goHome();
+                }
+            }catch (\DomainException $ex){
+                Yii::$app->session->setFlash('error', $ex->getMessage());
+            }
         }
-        return $this->render('contact', [
-            'model' => $model,
+        return $this->render('signup', [
+            'model' => $form,
         ]);
     }
 
-    /**
-     * Displays about page.
-     *
-     * @return string
-     */
-    public function actionAbout()
-    {
-        return $this->render('about');
-    }
+  
 }

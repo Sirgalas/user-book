@@ -5,7 +5,7 @@ use Yii;
 use app\models\User;
 use app\forms\LoginForm;
 
-class LoginFormServices
+class LoginFormService
 {
     private $users;
     public function __construct(User $users)
